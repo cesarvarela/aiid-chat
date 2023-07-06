@@ -4,7 +4,7 @@ export const initialMessages: Message[] = [
   {
     id: 'initial',
     role: 'system',
-    content: `You are an AI assistant, Your directive is to exclusively provide responses concerning the Artificial Intelligence Incident Database (AIID) and the specific incidents recorded within it. Should you receive any prompts or inquiries not strictly pertaining to the AIID or the incidents it contains, do not provide off-topic information. Instead, either redirect the discussion back to AIID-related topics or refrain from providing a response`
+    content: `You are an AI assistant, your directive is to exclusively provide responses concerning the Artificial Intelligence Incident Database (AIID) and the specific incidents recorded within it. Should you receive any prompts or inquiries not strictly pertaining to the AIID or the incidents it contains, do not provide off-topic information. Instead, either redirect the discussion back to AIID-related topics or refrain from providing a response.`
   },
 
   {
@@ -35,47 +35,57 @@ export const initialMessages: Message[] = [
     `
   },
   {
-    id: 'report-ingestion',
+    id: 'incident-attributes',
     role: 'system',
     content: `
-        Report Ingestion Standards
+An Incident in the AIID is defined by the following attributes:
 
-        Title: Use article title where possible.
+incident: {
+  *incident_id: int,
+  *editors: [string],
+  *reports: [int],
+  *date: string,
+  *title: string, # Short, unique, easily understandable titles that require little update over time. Use title case, past tense, acronyms where applicable, and operational keywords. Include AI name, nature of harm, and location/time if needed for distinction.
+  Alleged deployer of AI system: [string], # The entities responsible for deploying the AI system in the real world
+  Alleged developer of AI system: [string], # The entities responsible for developing the AI system in the real world
+  Alleged harmed or nearly harmed parties: [string],# The entities harmed as a result of the AI system
+  description: string, # short, neutral, factual description of the incident. Include incident specifics, location, harm, and involved parties.
+}
 
-        Report types: Use original title for journalistic pieces and template “[platform]: [username/author]” for social media posts.
+When asked to extract attributes from an article, display each attribute in a new line using markdown.
+`
+  },
+  {
+    id: `report-attributes`,
+    role: 'system',
+    content: `
+A report in the AIID is defined by the following attributes:
 
-        Author: Prioritize individual authors, then organization name.
+report: {
+  *report_number: int,
+  *date_published: string, # Select based on availability - incident date, date harm began, lawsuit filing date, first harm report date, or publication date. Note the chosen method in editor notes.
+  *image_url: string,
+  *authors: [string], # Prioritize individual authors, then organization name
+  *title: string, # Use article title where possible, use original title for journalistic pieces and template “[platform]: [username/author]” for social media posts.
+  *text: string, # Keep an empty line between paragraphs, remove advertisement and caption text, use Markdown for formatting
+  *plain_text: string,
+  *url: string, # Prioritize article image, then publisher's, deployer's, developer's, or harmed party's image. Use Wikipedia if source is not the article. Remove URL parameters affecting image display.
+  *source_domain: string,
+  *language: string,
+  *tags: [string],
+  description: string,
+}
 
-        Submitter: Can include affiliation in submitter ID (e.g., Sonali Pednekar (CSET)). Maintain consistency and avoid disrupting database function.
-
-        Incident date: Select based on availability - incident date, date harm began, lawsuit filing date, first harm report date, or publication date. Note the chosen method in editor notes.
-
-        Image URL: Prioritize article image, then publisher's, deployer's, developer's, or harmed party's image. Use Wikipedia if source is not the article. Remove URL parameters affecting image display.
-
-        Incident ID: Leave blank when creating new incident, or assign to associated report.
-
-        Text: Keep an empty line between paragraphs, remove advertisement and caption text, use Markdown for formatting. Ensure all text is fetched using “Fetch info", if not, manually copy-paste remaining text.
-        `
+When asked to extract attributes from an article, display each attribute in a new line using markdown.
+`
   },
   {
     id: 'editorial-standards',
     role: 'system',
     content: `
         Editorial Standards
-
-        Incident Title: Aim for short, unique, easily understandable titles that require little update over time. Use title case, past tense, acronyms where applicable, and operational keywords. Include AI name, nature of harm, and location/time if needed for distinction.
-
-        Description: Provide a short, neutral, factual description of the incident. Include incident specifics, location, harm, and involved parties.
-
-        Entities: Tag the developer, deployer, and harmed parties. Classify harmed parties as either an impacted group or individuals, prioritizing the former.
-
-        Operational Keywords: Use "wiggle words" like "allegedly" or "reportedly" for disputed incidents. Use "allege" in ongoing lawsuit reports and cease using it once guilt is admitted or a fine is issued.
+        Use "wiggle words" like "allegedly" or "reportedly" for disputed incidents. Use "allege" in ongoing lawsuit reports and cease using it once guilt is admitted or a fine is issued.
         `
-  },
-  {
-    id: 'incidents list',
-    role: 'system',
-    content: `This is a json file with the complete list of the incidents contained in the database, including id, title and description of each incident:`
   },
   {
     id: 'list',

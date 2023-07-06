@@ -47,8 +47,6 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
 
   const functionCallHandler: FunctionCallHandler = async (chatMessages, functionCall) => {
 
-    console.log(functionCall);
-
     if (functionCall.name === 'incident') {
 
       if (functionCall.arguments) {
@@ -95,10 +93,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
               id: nanoid(),
               name: 'incident',
               role: 'function' as const,
-              content: JSON.stringify({
-                result,
-                info: 'boe'
-              })
+              content: JSON.stringify(result)
             }
           ]
         }
@@ -107,7 +102,6 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       }
     }
   }
-
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({

@@ -16,8 +16,9 @@ export function ChatList({ messages }: ChatList) {
     <div className="relative mx-auto max-w-2xl px-4">
       {messages
         .filter(message => message.role !== 'system')
+        .filter(message => message.role !== 'function')
         .map((message, index) => (
-          <div key={index}>
+          <div key={index} role={message.role}>
             <ChatMessage message={message} />
             {index < messages.length - 1 && (
               <Separator className="my-4 md:my-8" />

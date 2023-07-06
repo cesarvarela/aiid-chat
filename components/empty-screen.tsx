@@ -1,22 +1,26 @@
 import { UseChatHelpers } from 'ai/react'
 
 import { Button } from '@/components/ui/button'
-import { ExternalLink } from '@/components/external-link'
 import { IconArrowRight } from '@/components/ui/icons'
 
 const exampleMessages = [
   {
-    heading: 'Explain technical concepts',
-    message: `What is a "serverless function"?`
+    heading: 'Ask about a specific Incident',
+    message: `Fetch info about Incident 1`
   },
   {
-    heading: 'Summarize an article',
-    message: 'Summarize the following article for a 2nd grader: \n'
+    heading: 'List of Incidents involving cars',
+    message: `Which Incidents involve cars?`
   },
   {
-    heading: 'Draft an email',
-    message: `Draft an email to my boss about the following: \n`
+    heading: 'Extract report attributes from an article',
+    message: `I have an article here and I would like you to extract potential 'report' attributes based on the schema we discussed earlier. Here is the article:`
+  },
+  {
+    heading: 'Extract incident attributes from an article',
+    message: `I have an article here and I would like you to extract potential 'incident' attributes based on the schema we discussed earlier. Here is the article:`
   }
+
 ]
 
 export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
@@ -24,16 +28,8 @@ export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
     <div className="mx-auto max-w-2xl px-4">
       <div className="rounded-lg border bg-background p-8">
         <h1 className="mb-2 text-lg font-semibold">
-          Welcome to Next.js AI Chatbot!
+          AIID Chatbot!
         </h1>
-        <p className="mb-2 leading-normal text-muted-foreground">
-          This is an open source AI chatbot app template built with{' '}
-          <ExternalLink href="https://nextjs.org">Next.js</ExternalLink> and{' '}
-          <ExternalLink href="https://vercel.com/storage/kv">
-            Vercel KV
-          </ExternalLink>
-          .
-        </p>
         <p className="leading-normal text-muted-foreground">
           You can start a conversation here or try the following examples:
         </p>
@@ -50,6 +46,9 @@ export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
             </Button>
           ))}
         </div>
+        <p className="leading-normal text-muted-foreground mt-2 text-sm">
+          (Until semantic search is implemented, only the first 150 incidents are stored in the chatbot&apos;s context)
+        </p>
       </div>
     </div>
   )
