@@ -32,12 +32,12 @@ export async function POST(req: Request) {
   const res = await openai.createChatCompletion({
     model: 'gpt-3.5-turbo-16k',
     messages: [...initialMessages.map(m => ({ role: m.role, content: m.content })), ...messages],
-    temperature: 0.7,
+    temperature: 0.5, // have the model be more deterministic and less random
     stream: true,
     functions: [
       {
         name: 'incident',
-        description: 'Fetch details for a specific incident, only used is the user asks explicitly for details',
+        description: 'Retrieves comprehensive information about an incident, including associated parties, date, and metadata, when a user specifically requests details beyond the title and description.',
         parameters: {
           "type": "object",
           "properties": {
