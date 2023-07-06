@@ -4,6 +4,7 @@ import { Configuration, OpenAIApi } from 'openai-edge'
 
 import { auth } from '@/auth'
 import { nanoid } from '@/lib/utils'
+import { initialMessages } from '@/lib/initialMessages'
 
 export const runtime = 'edge'
 
@@ -29,39 +30,84 @@ export async function POST(req: Request) {
   }
 
   const res = await openai.createChatCompletion({
-    model: 'gpt-3.5-turbo',
-    messages,
+    model: 'gpt-3.5-turbo-16k',
+    messages: [...initialMessages.map(m => ({ role: m.role, content: m.content })), ...messages],
     temperature: 0.7,
-    stream: true
+    stream: true,
+    functions: [
+      {
+        name: 'incident',
+        description: 'Fetch details for a specific incident, only used is the user asks explicitly for details',
+        parameters: {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "description": "The incident ID"
+            },
+          },
+          "required": ["id"]
+        }
+      }
+    ]
   })
 
-  const stream = OpenAIStream(res, {
-    async onCompletion(completion) {
-      const title = json.messages[0].content.substring(0, 100)
-      const id = json.id ?? nanoid()
-      const createdAt = Date.now()
-      const path = `/chat/${id}`
-      const payload = {
-        id,
-        title,
-        userId,
-        createdAt,
-        path,
-        messages: [
-          ...messages,
-          {
-            content: completion,
-            role: 'assistant'
+  // from : https://github.com/vercel-labs/ai/pull/163/files#diff-b4fc3cf85f3dc974899314160d4930248499e7e5c371f123d4d9a4948c6b3e62
+
+  if (res.ok) {
+
+    const stream = OpenAIStream(res, {
+      async onCompletion(completion) {
+        const title = json.messages[0].content.substring(0, 100)
+        const id = json.id ?? nanoid()
+        const createdAt = Date.now()
+        const path = `/chat/${id}`
+        const payload = {
+          id,
+          title,
+          userId,
+          createdAt,
+          path,
+          messages: [
+            ...messages,
+            {
+              content: completion,
+              role: 'assistant'
+            }
+          ]
+        }
+        await kv.hmset(`chat:${id}`, payload)
+        await kv.zadd(`user:chat:${userId}`, {
+          score: createdAt,
+          member: `chat:${id}`
+        })
+      },
+
+    })
+
+    return new StreamingTextResponse(stream)
+  }
+  else {
+
+    if (res.body) {
+      const reader = res.body.getReader()
+      return new ReadableStream({
+        async start(controller) {
+          const { done, value } = await reader.read()
+          if (!done) {
+            const errorText = new TextDecoder().decode(value)
+            controller.error(new Error(`Response error: ${errorText}`))
+
+            console.log(errorText);
           }
-        ]
-      }
-      await kv.hmset(`chat:${id}`, payload)
-      await kv.zadd(`user:chat:${userId}`, {
-        score: createdAt,
-        member: `chat:${id}`
+        }
+      })
+    } else {
+      return new ReadableStream({
+        start(controller) {
+          controller.error(new Error('Response error: No response body'))
+        }
       })
     }
-  })
-
-  return new StreamingTextResponse(stream)
+  }
 }

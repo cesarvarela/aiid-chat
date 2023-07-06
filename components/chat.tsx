@@ -1,8 +1,8 @@
 'use client'
 
 import { useChat, type Message } from 'ai/react'
-
-import { cn } from '@/lib/utils'
+import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/client';
+import { cn, nanoid } from '@/lib/utils'
 import { ChatList } from '@/components/chat-list'
 import { ChatPanel } from '@/components/chat-panel'
 import { EmptyScreen } from '@/components/empty-screen'
@@ -20,12 +20,21 @@ import { useState } from 'react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { toast } from 'react-hot-toast'
+import { ChatRequest, FunctionCallHandler } from 'ai'
 
 const IS_PREVIEW = process.env.VERCEL_ENV === 'preview'
 export interface ChatProps extends React.ComponentProps<'div'> {
   initialMessages?: Message[]
   id?: string
 }
+
+const client = new ApolloClient({
+  link: new HttpLink({
+    uri: `https://incidentdatabase.ai/api/graphql`,
+  }),
+  cache: new InMemoryCache(),
+});
+
 
 export function Chat({ id, initialMessages, className }: ChatProps) {
   const [previewToken, setPreviewToken] = useLocalStorage<string | null>(
@@ -34,15 +43,85 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   )
   const [previewTokenDialog, setPreviewTokenDialog] = useState(IS_PREVIEW)
   const [previewTokenInput, setPreviewTokenInput] = useState(previewToken ?? '')
+
+
+  const functionCallHandler: FunctionCallHandler = async (chatMessages, functionCall) => {
+
+    console.log(functionCall);
+
+    if (functionCall.name === 'incident') {
+
+      if (functionCall.arguments) {
+        const { id } = JSON.parse(functionCall.arguments);
+
+        const result = await client.query({
+          variables: {
+            id,
+          },
+          query: gql`
+          query boe($id:Int){
+            incidents(limit: 999, query:{incident_id: $id}) {
+              incident_id
+              title
+              description
+              AllegedDeployerOfAISystem {
+                _id
+                entity_id
+                name
+              }
+              AllegedDeveloperOfAISystem {
+                _id
+                entity_id
+                name
+              }
+              editor_notes
+              editors
+              reports {
+                report_number
+                title
+                description
+                editor_notes
+                is_incident_report
+              }
+            }
+          }
+          `,
+        });
+
+        const functionResponse: ChatRequest = {
+          messages: [
+            ...chatMessages,
+            {
+              id: nanoid(),
+              name: 'incident',
+              role: 'function' as const,
+              content: JSON.stringify({
+                result,
+                info: 'boe'
+              })
+            }
+          ]
+        }
+
+        return functionResponse
+      }
+    }
+  }
+
+
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       initialMessages,
       id,
+      experimental_onFunctionCall: functionCallHandler,
       body: {
         id,
-        previewToken
+        previewToken,
       },
       onResponse(response) {
+
+        console.log(response.body, response.status, response.statusText);
+
         if (response.status === 401) {
           toast.error(response.statusText)
         }
@@ -70,6 +149,8 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
         input={input}
         setInput={setInput}
       />
+
+      {`chatid: ${id}`}
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>
         <DialogContent>
